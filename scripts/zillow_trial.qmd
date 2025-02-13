@@ -4,3 +4,28 @@ author: Jack Bienvenue
 date: 12 February 2025
 format: html
 ---
+
+``` {python}
+# Package Import
+import nasdaqdatalink as nq
+import pandas as pd
+```
+
+```{python}
+# Extract NASDAQ API
+with open('../api_keys/nasdaq.txt', 'r') as file:
+    api_key = file.read().strip()
+```
+
+``` {python}
+# Setup connection to NASDAQ data
+
+nq.ApiConfig.api_key = api_key
+
+df = nq.get_table('ZILLOW/DATA',indicator_id='ZSFH', region_id='99999')
+
+df
+```
+
+
+
