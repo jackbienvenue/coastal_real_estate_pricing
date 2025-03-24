@@ -1,0 +1,99 @@
+---
+author: Jack Bienvenue
+date: 24 March 2025
+format: html
+title: Statistical Testing for Capstone Project
+---
+
+In this document, we will prepare statistical tests to evaluate whether coastal real estate valuations are higher than inland ones.
+
+```{python}
+# Package Import
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scipy.stats as stats
+
+# Data Import
+df = pd.read_csv('../data/coastal_coded_df.csv')
+
+# Descriptive statistics:
+coastal_stats = df.groupby('coastal').describe()
+print(coastal_stats)
+```
+
+## Testing Strategy
+Let's recall the organizational scheme for this hypothesis testing:
+
+1. Calculate month-over-month average valuation changes for coastal and non-coastal sets.
+2. Calculate the difference in average valuations changes for each month in the dataset.
+3. Test
+
+``` {python}
+# Convert 'date' column to datetime format
+df['date'] = pd.to_datetime(df['date'])
+
+# Extract year and month from the date for grouping
+df['year_month'] = df['date'].dt.to_period('M')
+
+# Group by year_month and coastal to calculate the average value
+monthly_avg = df.groupby(['year_month', 'coastal'])['value'].mean().reset_index()
+
+# Pivot the table so that we have separate columns for coastal and non-coastal
+monthly_avg_pivot = monthly_avg.pivot(index='year_month', columns='coastal', values='value')
+
+# Rename columns for easier access
+monthly_avg_pivot.columns = ['non_coastal', 'coastal']
+
+# Calculate the change from the previous month for both coastal and non-coastal
+monthly_avg_pivot['coastal_change'] = monthly_avg_pivot['coastal'].diff()
+monthly_avg_pivot['non_coastal_change'] = monthly_avg_pivot['non_coastal'].diff()
+
+# Calculate the difference between the changes (coastal change - non-coastal change)
+monthly_avg_pivot['change_difference'] = monthly_avg_pivot['coastal_change'] - monthly_avg_pivot['non_coastal_change']
+
+# Reset index for the final DataFrame
+monthly_avg_pivot.reset_index(inplace=True)
+
+# Display the final DataFrame
+print(monthly_avg_pivot)
+
+monthly_avg_pivot.to_csv('../data/differences.csv')
+```
+
+```{python}
+# Drop the first row with NaN values (since there's no previous month for the first entry)
+monthly_avg_pivot = monthly_avg_pivot.dropna(subset=['change_difference'])
+
+# Plot the histogram of the change_difference
+plt.figure(figsize=(10, 6))
+sns.histplot(monthly_avg_pivot['change_difference'], bins=10, color='blue')
+
+# Customize the plot
+plt.title('Histogram of Difference in Average Monthly Valuation Changes (Coastal - Non-Coastal)')
+plt.xlabel('Change Difference ($)')
+plt.ylabel('Frequency')
+
+# Show the plot
+plt.tight_layout()
+plt.savefig('../manuscript/manuscript_figures/histogram_of_change_differnces.png', dpi=300)
+plt.show()
+```
+
+## Performing Hypothesis test
+
+``` {python}
+# Perform the one-sample t-test to check if the average change difference is significantly different from 0
+t_stat, p_value = stats.ttest_1samp(monthly_avg_pivot['change_difference'].dropna(), 0)
+
+# Print the results
+print(f"T-statistic: {t_stat}")
+print(f"P-value: {p_value}")
+
+# Interpretation of the p-value
+alpha = 0.05  # Significance level (5%)
+if p_value < alpha:
+    print("Reject the null hypothesis: The average change difference is significantly different from 0.")
+else:
+    print("Fail to reject the null hypothesis: The average change difference is not significantly different from 0.")
+```

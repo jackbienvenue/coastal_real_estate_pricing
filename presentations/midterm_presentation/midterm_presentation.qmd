@@ -1,0 +1,239 @@
+---
+title: "Coastal Property Risk Pricing"
+format: 
+    revealjs:
+        theme: night
+highlight-style: "github"  
+footer: "Jack Bienvenue | STAT4915" 
+preview-links: false
+css: "columns.css"
+---
+
+# 
+
+<div id="left">
+
+<span style="font-size:100px;">**Problem**</span>
+
+<span style="font-size:73px;">**Description**</span>
+
+</div>
+
+<div id="right">
+
+![](images/beach_for_sale.jpg)
+
+</div>
+
+## Coastal Risks are Growing
+
+<div id="left">
+
+Climate-related risks:
+
+- Sea level rise <a href="#ref1">[1]</a>
+- Intensified storms <a href="#ref1">[1]</a>
+- Erosion <a href="#ref2">[2]</a>
+
+![](images/erosion_homes.jpg){ width=75% } <a href="#ref3">[3]</a>
+
+</div>
+
+<div id="left">
+
+Non-climate risks:
+
+- Insurance cancellation <a href="#ref4">[4]</a>
+- Falling valuations <a href="#ref5">[5]</a>
+- Decreased liquidity <a href="#ref5">[5]</a>
+
+![](images/flood_map.jpeg){ width=75% } <a href="#ref6">[6]</a>
+
+
+</div>
+
+## But, Coastal Valuations Disagree!
+
+<div id="left">
+
+Higher risk and risk expectations do not perceivably sink prices.
+
+- Ignoring risk <a href="#ref7">[7]</a>
+- Dominating price movements:
+    - Upscaling after destruction <a href="#ref7">[7]</a>
+    - Inflation, housing shortage
+
+
+</div>
+
+<div id="right">
+
+![](images/inland_coastal_property_values.webp) <a href="#ref7">[7]</a>
+
+
+</div>
+
+## Relevance
+
+Coastal counties in the U.S. account for:
+
+- 40% of the population, <a href="#ref8">[8]</a>
+- The majority of major cities & job centers,
+- A large portion of the nation's real estate value,
+
+and host much of the nation's most complex and important infrastructure.
+
+
+## Coastal Real Estate Price Trends
+
+According to a 2024 paper, despite the past, current, and foreseeable dramatic changes in climate risk factors, housing prices ... <a href="#ref7">[7]</a>
+
+**Coastal property values are accelerating at a rate beyond non-coastal properties, even in the face of unproportionate risk growth.**
+
+<section>
+  ![Miami](images/miami.jpg){ width=92% }
+  <a href="#ref9">[9]</a>
+</section>
+
+
+
+# Project Objectives 
+
+## Project Objectives:
+
+- Creating a novel, open-data process to independently evaluate conclusions from a [2024 paper on the coastal real estate price trends](https://www.nature.com/articles/s41467-024-46548-6). <a href="#ref7">[7]</a>,
+- Employing data science, GIS, and statistical skills to extract meaningful information from real estate data,
+- Carefully planning and recording analysis procedures to practice academic report writing for a research project.
+
+
+## Project Outcomes
+
+- High-quality, comprehensive, georeferenced dataset of real estate transactions recorded by Zillow from 01/31/00 to 06/30/24, classified by coastal and non-coastal properties
+  - Potentially useful for other analyses
+  - Procedure for merging datasets to allow temporal updates
+- Open the door for other questions:
+  - Localization of coastal price trends
+    - Historically weather-impacted vs. unharmed
+
+# Pre-Analysis Plan
+
+## Primary Project Data
+
+**Zillow** (via [**NASDAQ Data Link**](https://data.nasdaq.com/))
+
+Details:
+
+- 5.5 GB of real estate transactions
+- Categorized by *region_id*, a Zilow designation representing:
+  - County,
+  - Zip code, or
+  - "Neighborhood"
+- Varying categorization (some API-accessible only)
+
+## Auxilliary Project Data
+
+- Shapefiles:
+  - US county, zip code shapefiles (2022+, Census Bureau)
+  - Zillow neighborhoods shapefile (2017, EPA)
+
+## Analysis --- Stage 1:
+
+Assembly of coastal and non-coastal datasets:
+
+![Screenshot of ArcGIS session: Selection of Coastal Counties](images/coastal_counties_example.png)
+
+## Analysis --- Stage 2:
+
+Development of:
+
+- Randomized sampling scheme
+  - Resulting dataset should be balanced
+  - Validation of adequate spatiotemporal distribution
+- Matching scheme for real estate to coastal, non-coastal sets
+
+## Analysis --- Stage 3:
+
+- Calculation of month-over-month average valuation changes for selected coastal/ non-coastal
+- Paired t-tests to evaluate on a monthly basis:
+  - $H_0$: The difference in the rate of change of home valuations between coastal and non-coastal communities is the same.
+  - $H_1$: The difference in the rate of change is **not** the same.
+- Multiple comparisons for months within calendar years, employing false-discovery rate control. 
+
+## Limitations
+
+- Testing procedure may be too conservative
+- Mixed test results yields opaque interpretations
+- Method is agnostic to cause of price trends
+  - If risk *is* priced in, other market forces could still be dominating
+
+## Possible Extensions and Enhancements
+
+- K-means clustering to identify coastal communities with similar profiles
+- Side-by-side time series spatial visualizations of price increases
+- Revisitng analysis in the future
+
+## Objectives for final presentation:
+
+- Share findings, visualizations, difficulties encountered
+- Report any procedural deviations from methods proposed here
+
+<section>
+  <center>
+    ![](images/nc_underwater.jpg){ width=60% } <a href="#ref10">[10]</a>
+  </center>
+</section>
+
+## Interested in Real Estate GIS?
+
+Feel free to follow the repository here for access to scripts:
+
+<div class="centered">
+  <img src="images/qrcode.png" class="qr-image" />
+</div>
+
+# Questions?
+
+# Scholarly References {.scrollable}
+
+<section>
+  <ol>
+    <li id="ref1">Jacob, K. H. (2015). Sea level rise, storm risk, denial, and the future of coastal cities. Bulletin of the Atomic Scientists, 71(5), 40-50.</li>
+    <li id="ref2">Bacopoulos, P., & Clark, R. R. (2021). Coastal erosion and structural damage due to four consecutive-year major hurricanes: Beach projects afford resilience and coastal protection. Ocean & Coastal Management, 209, 105643.</li>
+    <li id="ref4">Nevitt, M., & Pappas, M. (2023). Climate Risk, Insurance Retreat, and State Response. Ga. L. Rev., 58, 1603.</li>
+    <li id="ref5">Curtis, H. (2022). The Effect of Climate Change on the Pricing and Transactional Volume of Real Estate. Capitol Econ. J., 2(1).</li>
+    <li id="ref7">McNamara, D. E., Smith, M. D., Williams, Z., Gopalakrishnan, S., & Landry, C. E. (2024). Policy and market forces delay real estate price declines on the US coast. Nature Communications, 15(1), 2209.</li>
+  </ol>
+</section>
+
+
+# Images & Articles {.scrollable}
+
+<section>
+  <h2>Non-Scholarly References</h2>
+  <ol>
+    <li id="ref3">
+      McMullen, T. (2018). Once prized and profitable, beachfront real estate can now be a losing proposition.
+      <a href="https://www.seattletimes.com/business/real-estate/once-prized-and-profitable-beachfront-real-estate-can-now-be-a-losing-proposition/" target="_blank">Source</a>.
+    </li>
+    <li id="ref6">
+      Westerly, Town of. (2022). Flood Zone Management & Protection.
+      <a href="https://westerlyri.gov/547/Flood-Zone-Management-Protection" target="_blank">Source</a>.
+    </li>
+    <li id="ref8">
+      NOAA Office for Coastal Management. Economics and Demographics Fast Facts.
+      <a href="https://coast.noaa.gov/states/fast-facts/economics-and-demographics.html#:~:text=Almost%2040%25%20Live%20on%20the,land%20mass%20(excluding%20Alaska" target="_blank">Source</a>.
+    </li>
+    <li id="ref9">
+      Miami homes named most at-risk for storm surge in 2020
+      <a href= https://southfloridaagentmagazine.com/2020/05/29/miami-homes-named-risk-storm-surge-2020/ target="_blank">Source</a>.
+    </li>
+      <li id="ref10">
+      The Town in North Carolina Still Underwater After Hurricane Matthew
+      <a href= https://abcnews.go.com/US/town-north-carolina-water-hurricane-matthew/story?id=42724119 target="_blank">Source</a>.
+    </li>
+  </ol>
+</section>
+
+# Thank you!
+
+Have a great break!

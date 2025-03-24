@@ -1,0 +1,22 @@
+---
+title: "Using Zillow Data to Analyze Coastal vs. Non-Coastal Property Data"
+format: revealjs
+revealjs-theme: "simple" 
+revealjs-transition: "fade" 
+highlight-style: "github"  
+footer: "Jack Bienvenue | STAT4915" 
+slide-number: true 
+preview-links: false
+---
+
+# Problem Reminder
+
+## 
+
+##
+
+
+
+# Scholarly References {.scrollable}
+
+# Image & Article Credits {.scrollable}

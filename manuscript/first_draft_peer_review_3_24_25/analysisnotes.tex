@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{hyperref}
+
+\title{Data Sources, Analysis Steps, Etc.}
+\author{Jack Bienvenue}
+\date{February 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Data Sources}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Dataset} & \textbf{Source} & \textbf{Link to Source} \\
+\hline
+US Counties Shapefile (2018) & Census Bureau & \href{census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html}{Counties} \\
+US Zip Codes Shapefile (2020) & Census Bureau & \href{census.gov/cgi-bin/geo/shapefiles/index.php?year=2020&layergroup=ZIP+Code+Tabulation+Areas}{Zip codes} \\
+Zillow Neighborhoods Shapefile (2017) & EPA & \href{catalog.data.gov/dataset/neighborhoods-us-2017-zillow-segs9}{Neighborhoods} \\
+\hline
+\end{tabular}
+\caption{Datasets and their sources}
+\end{table}
+
+\section{Data Processing Steps}
+
+\section{Notes of Decision Making}
+
+\begin{enumerate}
+    \item For selection of counties which are coastal, selected features are those which are adjacent to the coast, including major waterway inlets. In addition, the counties adjacent to the Great Lakes are included as they are expected to suffer water-level related complications due to climate change https://www.sciencedirect.com/science/article/abs/pii/S0022169422007788.
+    \item Coastal neighborhoods are defined by neighborhoods which intersect the coastal county set. Coastal zip codes are defined similarly.
+    \item Non-coastal zip codes are defined as those which do not intersect with coastal zip code areas (Masking out coastal areas from the original shapefile)
+\end{enumerate}
+
+\end{document}

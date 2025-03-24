@@ -1,0 +1,195 @@
+---
+author: Jack Bienvenue
+title: Subsample Verification
+date: 23 March 2025
+---
+
+Before working with our newly subsampled data, it is important to ensure that it will suffice for our purposes. Spatiotemporal balance considerations are important for our analysis. Let's evaluate the data:
+
+# Phase 1: 
+
+```{python}
+# Package Import
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+import folium
+import seaborn as sns
+from matplotlib.lines import Line2D
+
+# Data Import
+df = pd.read_csv('../data/coastal_coded_df.csv')
+```
+
+
+## Creation of state-by-state chart:
+
+``` {python}
+#| echo: false
+#| eval: false 
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Assuming your DataFrame is named df
+# Step 1: Extract the last two characters (state abbreviation) from the geocode_name column
+df['state'] = df['geocode_name'].str.strip().str[-2:]
+
+df['state'] = df['state'].str.upper()
+
+# Create set of valid state codes (including DC)
+valid_states = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 
+    'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 
+    'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 
+    'WI', 'WY', 'DC'
+]
+
+# Filter only valid states
+df = df[df['state'].isin(valid_states)]
+
+# Step 2: Set up the figure
+plt.figure(figsize=(10, 10))
+
+# Step 3: Plot the state-wise composition for coastal == 1 (Coastal Data)
+plt.subplot(1, 2, 1)
+sns.countplot(data=df[df['coastal'] == 1], y='state', color='royalblue', order=valid_states)
+plt.title('Coastal Data by State')
+plt.xlabel('Count')
+plt.ylabel('State')
+
+# Step 4: Plot the state-wise composition for coastal == 0 (Non-coastal Data)
+plt.subplot(1, 2, 2)
+sns.countplot(data=df[df['coastal'] == 0], y='state', color='darkgreen', order=valid_states)
+plt.title('Non-Coastal Data by State')
+plt.xlabel('Count')
+plt.ylabel('State')
+
+# Adjust layout and display
+plt.tight_layout()
+plt.savefig("../manuscript/manuscript_figures/by_state_counts.png")
+plt.show()
+
+```
+
+## Creation of time series chart
+
+This chart shows the annual average coastal and non-coastal real estate values. 
+
+``` {python}
+# Convert the date column to datetime
+df['date'] = pd.to_datetime(df['date'])
+
+# Extract the year from the date
+df['year'] = df['date'].dt.year
+
+# Group the data by 'year' and 'coastal', and calculate the average 'value'
+df_grouped = df.groupby(['year', 'coastal'], as_index=False)['value'].mean()
+
+# Set the custom color palette for 'Non-Coastal' (darkgreen) and 'Coastal' (royalblue)
+palette = {0: 'darkgreen', 1: 'royalblue'}
+
+# Create the plot
+plt.figure(figsize=(12, 6))
+
+# Plot the data without markers, but with the correct hues and custom palette
+sns.lineplot(data=df_grouped, x='year', y='value', hue='coastal', marker=None, palette=palette)
+
+# Customize the plot
+plt.title('Average Valuation for Coastal vs Non-Coastal Properties')
+plt.xlabel('Year')
+plt.ylabel('Average Valuation ($)')
+
+# Manually create the legend
+legend_labels = ['Non-Coastal', 'Coastal']
+# Create custom legend handles with line styles
+handles = [Line2D([0], [0], color='darkgreen', lw=2),  # Dark green for Non-Coastal
+           Line2D([0], [0], color='royalblue', lw=2)]  # Royal blue for Coastal
+
+# Add the legend with the correct labels and handles
+plt.legend(handles=handles, labels=legend_labels)
+
+# Rotate x-axis labels for better readability
+plt.xticks(rotation=45)
+
+# Set x-axis limits from 1996 to 2024
+plt.xlim(1995, 2025)
+
+# Set the x-ticks to display every year from 1996 to 2024
+plt.xticks(range(1996, 2025, 1))  # Every year from 1996 to 2024
+
+# Show grid
+plt.grid(True)
+
+# Save the figure (optional)
+plt.savefig('../manuscript/manuscript_figures/annual_avg_chart.png', dpi=300, bbox_inches='tight')
+
+# Show the plot
+plt.show()
+```
+
+This chart shows monthly average coastal and non-coastal valuations:
+
+```{python}
+# Convert 'date' column to datetime if not already
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
+
+# Extract year-month period from date (this gives a period object)
+df['year_month'] = df['date'].dt.strftime('%Y-%m') 
+
+# Ensure 'value' column is numeric (convert non-numeric to NaN)
+df['value'] = pd.to_numeric(df['value'], errors='coerce')
+
+# Drop rows where 'value' is NaN
+df = df.dropna(subset=['value'])
+
+# Verify the column types
+print(df.dtypes)
+
+# Group by year_month and coastal, calculating the average value
+df_grouped = df.groupby(['year_month', 'coastal'], as_index=False)['value'].mean()
+
+# Check the data to make sure it's correct
+print(df_grouped.head())
+
+# Create the plot
+plt.figure(figsize=(12, 6))
+
+# Set the custom color palette for 'Non-Coastal' (darkgreen) and 'Coastal' (royalblue)
+palette = {0: 'darkgreen', 1: 'royalblue'}
+
+# Plot the data without markers, but with the correct hues and custom palette
+sns.lineplot(data=df_grouped, x='year_month', y='value', hue='coastal', marker=None, palette=palette)
+
+# Customize the plot
+plt.title('Average Valuations for Coastal vs Non-Coastal Properties (Monthly)')
+plt.xlabel('Year')
+plt.ylabel('Average Valuation ($)')
+
+# Manually create the legend
+legend_labels = ['Non-Coastal', 'Coastal']
+# Create custom legend handles with line styles
+handles = [Line2D([0], [0], color='darkgreen', lw=2),  # Dark green for Non-Coastal
+           Line2D([0], [0], color='royalblue', lw=2)]  # Royal blue for Coastal
+
+# Add the legend with the correct labels and handles, remove the extra legend entry
+plt.legend(handles=handles, labels=legend_labels)
+
+# Rotate x-axis labels for better readability
+plt.xticks(rotation=45)
+
+# Show grid
+plt.grid(True)
+
+# Set the x-ticks to show every 24th label
+xticks = plt.gca().get_xticks()
+plt.xticks(xticks[::24], rotation=45)  # Display every 24th label
+
+# Save the figure (optional)
+plt.savefig('../manuscript/manuscript_figures/coastal_vs_non_coastal_monthly.png', dpi=300, bbox_inches='tight')
+
+# Show the plot
+plt.show()
+
+```

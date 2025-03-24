@@ -1,0 +1,205 @@
+---
+author: Jack Bienvenue
+date: March 23, 2025
+title: Data Cleaning
+format: html
+---
+
+# Data Cleaning Process
+
+The data will be cleaned here by matching properties to their appropriate coastal/non-coastal designation
+
+```{python}
+# Package Import
+import pandas as pd
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import googlemaps
+from datetime import datetime
+import re
+from shapely.geometry import Point
+
+# Data Import
+#df_full = pd.read_csv("/Volumes/JB_Fortress_L3/STAT4915/data/zillow_data.csv") # Full path to external hard drive, replace with full Zillow dataset path
+df_subset = pd.read_csv("../data/subsample_data.csv")
+```
+
+```{python}
+#| eval: false
+#| echo: false
+#-----------------------------------------------------------------------
+# OPTIONAL code chunk, generates graph of the number of entries for each year in the dataset. 
+#-----------------------------------------------------------------------
+
+# Extract year from the 'date' column
+df_full['year'] = df_full['date'].dt.year
+
+# Count the number of entries per year
+entries_by_year = df_full['year'].value_counts().sort_index()
+
+# Print the number of entries per year
+print(entries_by_year)
+
+# Plot the histogram
+plt.figure(figsize=(10, 6))
+entries_by_year.plot(kind='bar', color='skyblue')
+plt.title('Number of Entries by Year')
+plt.xlabel('Year')
+plt.ylabel('Number of Entries')
+plt.xticks(rotation=45)
+plt.tight_layout()
+
+plt.savefig('../annual_distribution_of_data')
+```
+
+## Matching Mechanism for Coastal Designation
+
+Let's build a function to execute the matching:
+
+``` {python}
+#| echo: false
+#| eval: false
+
+#PERHAPS DELETE THIS CODE CHUNK
+
+# Upload coastal/non-coastal county shapefiles:
+coastal_counties = gpd.read_file('../data/coastal_shapefiles/counties/coastal_counties.shp')
+#####non_coastal_counties = gpd.read_file('../data/non_coastal_shapefiles/counties/coastal_counties.shp')')
+
+# Upload coastal/non-coastal zip code shapefiles:
+coastal_zips = gpd.read_file('../data/coastal_shapefiles/zip_codes/coastal_zip_codes.shp')
+#####non_coastal_zips = gpd.read_file('../data/')
+
+# Upload coastal/non-coastal neighborhoods shapefiles:
+coastal_neighbors = gpd.read_file('../data/coastal_shapefiles/neighborhoods/coastal_neighborhoods.shp')
+#####non_coastal_neighbors = gpd.read_file('../data/')
+
+```
+
+```{python}
+#| eval: true
+
+def geocode_zillow_subsample(data_subset_path='../data/subsample_data.csv', region_path='../data/regions.csv',coastal_county_shapefile_path='../data/coastal_shapefiles/counties/coastal_counties.shp'):
+
+    '''
+    ARGUMENTS:
+    data_subset_path -> the relative path to the df containing the subset of the original large dataset to be geocoded
+
+    region_path -> the relative path to the df containing the region key
+
+    coastal_county_shapefile -> the shapefile containing coastal counties
+
+    coastal_zip_codes_shapefile -> the shapefile containing coastal zip codes
+
+    coastal_neighborhood_shapefile -> the shapefile containing coastal neighborhoods
+    '''
+
+    # FUNCTION PHASE 1: INITIALIZATION
+
+    # Upload API key (from Google Cloud console, Google Maps
+    # Geocoding API must be enabled)
+    with open("../api_keys/geocoding_api_key.txt", 'r') as file:
+        api_key = file.read()
+
+    # Initialize Google Maps Geocoding API
+    gmaps = googlemaps.Client(key=api_key)
+
+    # FUNCTION PHASE 2: PLACE NAME EXTRACTION
+
+    df_subset = pd.read_csv(data_subset_path)
+
+    ##### DELETE LATER! FOR CONVENIENT PROCESSING ONLY
+    #df_subset = df_subset.sample(n=100000, random_state=4915)
+
+    df_regions = pd.read_csv(region_path)
+
+    merged_df = pd.merge(df_subset, df_regions, on='region_id')
+
+    # Define sub-function to extract place names consistently
+    def place_name_extraction(region):
+        
+        '''
+        There is inconsistency in the naming conventions for regions in
+        the dataset. For instance, some are named in the style:
+        'Bridgeport, CT', while others have names like 'Northeast Dallas; TX; Dallas-Fort Worth-Arlington, TX; Dallas County; Dallas'. This function will unify names for consistent geocoding.
+        '''
+
+        # Define state abbreviations
+        state_abbreviations = {'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'}
+
+        # Split the input string at the first semicolon (if it exists)
+        parts = region.split(';', 1)
+
+        # Extract everything before the first semicolon (strip leading/trailing spaces)
+        base_string = parts[0].strip()
+
+        # Check the last two characters of the base string
+        if len(base_string) >= 2 and base_string[-2:].upper() in state_abbreviations:
+            # If the last two characters are a state abbreviation, return the base string
+            return base_string
+        elif len(parts) > 1:
+            # If there is another part (after the first semicolon), add that and strip spaces
+            additional_info = parts[1].split(';', 1)[0].strip()
+            # Combine the base string with the state abbreviation
+            return f"{base_string}, {additional_info[:2].upper()}"
+        else:
+            # If no valid state abbreviation found, return the base string
+            return base_string
+
+    # Apply the function to get geocoding-ready names
+    merged_df['geocode_name'] = merged_df['region'].apply(place_name_extraction)
+
+    # FUNCTION PHASE 3: GEOCODING
+
+    def geocode_point(address):
+        # Geocode address:
+        geocode_result = gmaps.geocode(address)
+
+        # Check success, extract latitude and longitude
+        if geocode_result:
+            latitude = geocode_result[0]['geometry']['location']['lat']
+            longitude = geocode_result[0]['geometry']['location']['lng']
+        else:
+            latitude = None
+            longitude = None  
+
+        return latitude, longitude
+
+    merged_df[['latitude', 'longitude']] = merged_df['geocode_name'].apply(lambda x: pd.Series(geocode_point(x)))
+
+    # FUNCTION PHASE 4: COASTAL/NON-COASTAL MATCHING
+
+    coastal_counties = gpd.read_file(coastal_county_shapefile_path)
+
+    def check_point_in_shapefile(lat, lon, shapefile_path=coastal_county_shapefile_path):
+        # Load the shapefile into a GeoDataFrame
+        gdf = gpd.read_file(shapefile_path)
+        
+        # Create a point from the latitude and longitude
+        point = Point(lon, lat)
+        
+        # Check intersection with coastal counties
+        intersects = gdf.geometry.intersects(point).any()
+        
+        return intersects
+
+    # Apply new function
+    merged_df['coastal'] = merged_df.apply(
+    lambda row: check_point_in_shapefile(row['latitude'], row['longitude'], coastal_county_shapefile_path), 
+    axis=1)
+
+    # Store 'coastal' indicator as binary
+    merged_df['coastal'] = merged_df['coastal'].astype(int)
+
+    # Remove redundant columns
+    merged_df = merged_df.drop(columns = ['region_id', 'region_type', 'region', 'latitude', 'longitude'])
+
+    print(merged_df)
+
+    return merged_df
+```
+
+```{python}
+coastal_coded_df = geocode_zillow_subsample()
+coastal_coded_df.to_csv('../data/coastal_coded_df_large.csv', index=False)
+```

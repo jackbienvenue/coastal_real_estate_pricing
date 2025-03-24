@@ -1,0 +1,95 @@
+---
+author: Jack Bienvenue
+date: March 23, 2025
+title: Subset Selection for Analysis
+format: html
+---
+
+# Randomized Subset Selection
+
+Since we are working with an extremely large dataset in this analysis, for computational purposes we will analyze a subset of the whole dataset.
+
+Random seeding will be used to ensure reproducibility in this analysis. 
+
+The complete dataset is stored on an external hard drive. This script will not work unless the **"data_path"** argument for the function is changed to a relevant path for where the complete dataset would exist on your computer.
+
+```{python}
+# Package Import
+import pandas as pd
+import random
+import matplotlib.pyplot as plt
+import numpy as np
+```
+
+We want to evaluate trends over time in this analysis. We found that there is imbalance between the number of entrries in the dataset by year as seen in this figure:
+
+![](../manuscript/supplemental_figures/annual_distribution_of_data.png)
+
+Therefore, we will sample randomly *within* years, but fix the sample size *per* year. 
+
+```{python}
+#| eval: true
+#| echo: true
+
+# Define function for randomized selection:
+
+def subsample_selection(data_path = "/Volumes/JB_Fortress_L3/STAT4915/data/zillow_data.csv", random_seed = 4915, subsample_size = 100000):
+
+    '''
+    This function takes the complete Zillow dataset and creates a subsample where the number of entries selectd per year is uniform, but selection is performed randomly within years. 
+
+    ARGUMENTS: 
+
+    data_path -> path to full Zillow data (defaults to my personal path)
+
+    random_seed -> selected random seed for relevant random processes. Ensures reproducibility.
+
+    subsample_size -> the approximate number of entries to include in the sample.
+    '''
+
+    # Define random seed & the count of entries per year
+
+    random.seed = random_seed # Set seed to specified seed
+
+    entries_per_year = (subsample_size // 28)  # Define individual year subsample sizes as the overall desired subsample size floor divided by 28 (number of years from 1996 to 2024)
+
+    # Extract years from data for sorting
+
+    df = pd.read_csv(data_path)
+    df['date'] = pd.to_datetime(df['date'], errors = 'coerce')
+    df['year'] = df['date'].dt.year
+
+    # Pull only the Home Value data
+    df = df[df['indicator_id'].str.startswith('Z')]
+
+    # Iterate through years 
+
+    subsamples = [] # Initialize empty list for iteration
+
+    for year, group in df.groupby('year'):
+
+        # Check if annual group contains more samples than desired sample size
+        if (len(group) >= entries_per_year):
+            sampled_group = group.sample(n=entries_per_year, random_state=random_seed)
+            subsamples.append(sampled_group)
+        else:
+            # If there are less entries than desired sample size, take all samples
+            # Note that this should not be the case.
+            subsamples.append(group)
+
+    # Splice together subsample
+
+    subsample = pd.concat(subsamples, ignore_index=True)
+
+    return subsample
+```
+
+```{python}
+# Create subsample, view it, and save file out
+sbs = subsample_selection()
+sbs
+
+sbs = sbs.drop(columns='year')
+
+sbs.to_csv('../data/subsample_data.csv', index=False)
+```
